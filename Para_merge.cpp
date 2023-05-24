@@ -1,102 +1,89 @@
-#include<iostream>
-#include<cstdlib>
-#include<omp.h>
-#include<time.h>
-#define MAX 900000
+#include <iostream>
+#include <stdlib.h>
+#include <omp.h>
+#include <time.h>
 using namespace std;
 
-void merge(int array[],int low1, int high1,int low2,int high2)
-{
-	int temp[MAX];
-	int i=low1,j=low2,k=0;
-	
-	while(i<=high1 && j<=high2)
-	{
-		if(array[i]<array[j])
-			temp[k++]=array[i++];
-		else
-			temp[k++]=array[j++];
-	}
-	
-	while(i<=high1)
-		temp[k++]=array[i++];
-	
-	while(j<=high2) 
-		temp[k++]=array[j++];
-		
-	for(i=low1,j=0;i<=high2;i++,j++)
-		array[i]=temp[j];
-}
+void mergesort(int a[], int i, int j);
+void merge(int a[], int i1, int j1, int i2, int j2);
 
-void mergesort(int array[], int low, int high)
+void mergesort(int a[], int i, int j)
 {
-	if(low<high)
+	int mid;
+	if (i < j)
 	{
-		int mid=(low+high)/2;
-		#pragma omp parallel sections
+		mid = (i + j) / 2;
+#pragma omp parallel sections
 		{
-			#pragma omp section
+#pragma omp section
 			{
-				mergesort(array,low,mid);
+				mergesort(a, i, mid);
 			}
-			
-			#pragma omp section
+#pragma omp section
 			{
-				mergesort(array,mid+1,high);
+				mergesort(a, mid + 1, j);
 			}
-			merge(array,low,mid,mid+1,high);
 		}
-		
-		/*mergesort(array,low,mid);
-		mergesort(array,mid+1,high);
-		merge(array,low,mid,mid+1,high);*/
+		merge(a, i, mid, mid + 1, j);
 	}
 }
 
-void display(int array[MAX], int n)
+void merge(int a[], int i1, int j1, int i2, int j2)
 {
-	cout<<"\nArray : ";
-	for(int i=00;i<n;i++)
-		cout<<array[i]<<"\t";
-}
+	int temp[1000];
+	int i, j, k;
+	i = i1;
+	j = i2;
+	k = 0;
 
+	while (i <= j1 && j <= j2)
+	{
+		if (a[i] < a[j])
+		{
+			temp[k++] = a[i++];
+		}
+		else
+		{
+			temp[k++] = a[j++];
+		}
+	}
+	while (i <= j1)
+	{
+		temp[k++] = a[i++];
+	}
+	while (j <= j2)
+	{
+		temp[k++] = a[j++];
+	}
+	for (i = i1, j = 0; i <= j2; i++, j++)
+	{
+		a[i] = temp[j];
+	}
+}
 
 int main()
 {
-	int array[MAX],n;
-	cout<<"\nEnter number of elements : ";
-	cin>>n;
-	
-	for(int i=0;i<n;i++)
+	int *a, n, i;
+	cout << "Enter total no of elements: ";
+	cin >> n;
+	clock_t start = clock();
+	a = new int[n];
+
+	cout << "Enter elements: ";
+	for (i = 0; i < n; i++)
 	{
-		array[i]=rand()%32;
+		cin >> a[i];
 	}
-	
-	cout<<"Array Before Sorting: ";
-	display(array,n);
-	cout<<endl;
-	
-	clock_t start=clock();
-	mergesort(array,0,n-1);
-	clock_t stop=clock();
-	
-	cout<<"Array After Sorting: ";
-	display(array,n);
-	cout<<endl;
-	cout<<"\nTime required : "<<(double)(stop-start)*1000/CLOCKS_PER_SEC<<" ms";
+
+	mergesort(a, 0, n - 1);
+	clock_t stop = clock();
+	cout << "Sorted array is: ";
+	for (i = 0; i < n; i++)
+	{
+		cout << a[i] << " ";
+	}
+	// Calculate the elapsed time in milliseconds
+	double elapsed = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+	cout << "\nTime Elapsed In ms: " << elapsed;
 	return 0;
 }
-
-/*
-OUTPUT
-unix@unix-HP-280-G1-MT:~/codes$ ./a.out
-
-Enter number of elements : 6
-Array Before Sorting:  
-Array : 7	6	9	19	17	31	
-Array After Sorting:  
-Array : 6	7	9	17	19	31	
-
-Time required : 0.007 msunix@unix-HP-280-G1-MT:~/codes$ 
-*/
-
